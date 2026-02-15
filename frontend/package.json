@@ -1,0 +1,15 @@
+{
+  "name": "study-tracker-frontend",
+  "version": "1.0.0",
+  "description": "Frontend for Study Activity Tracker",
+  "scripts": {
+    "start": "npx http-server -p 3000 -o"
+  },
+  "keywords": [
+    "study",
+    "tracker",
+    "frontend"
+  ],
+  "author": "",
+  "license": "MIT"
+}
