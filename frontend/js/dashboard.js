@@ -1,5 +1,6 @@
-// API Configuration
+// API Configuration - uses config.js or falls back to localhost
 const API_URL = window.API_CONFIG?.BACKEND_URL || 'http://localhost:5000/api';
+
 // Chart instances
 let weeklyChart = null;
 let subjectChart = null;
