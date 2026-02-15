@@ -16,19 +16,9 @@ connectDB();
 
 // Middleware
 app.use(cors({
-  origin: [
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
-    "https://your-frontend-domain.onrender.com"  // 👈 put your real frontend URL here
-  ],
-  credentials: true,
-  methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"]
+  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  credentials: true
 }));
-
-app.options("*", cors());
-
-
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
