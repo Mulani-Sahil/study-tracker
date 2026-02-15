@@ -217,7 +217,7 @@ a:hover {
   gap: var(--space-sm);
   margin-bottom: var(--space-2xl);
   font-family: var(--font-display);
-  font-weight: 650;
+  font-weight: 800;
   font-size: 1.5rem;
   color: var(--text-primary);
 }
