@@ -1,5 +1,3 @@
-
-
 // Get auth token
 function getAuthToken() {
   return localStorage.getItem('token');
@@ -15,110 +13,59 @@ function getHeaders() {
 
 // Modal Management
 function openAddTaskModal() {
-  const modal = document.getElementById('taskModal');
-  if (modal) {
-    modal.classList.remove('hidden');
-    
-    // Set default start time to 1 hour ago
-    const now = new Date();
-    const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000);
-    document.getElementById('taskStartTime').value = oneHourAgo.toISOString().slice(0, 16);
-    
-    // Set default end time to now
-    document.getElementById('taskEndTime').value = now.toISOString().slice(0, 16);
-  }
+  document.getElementById('taskModal').classList.remove('hidden');
+  
+  // Set default start time to now
+  const now = new Date();
+  const dateTimeString = now.toISOString().slice(0, 16);
+  document.getElementById('taskStartTime').value = dateTimeString;
+  
+  // Set default end time to 1 hour from now
+  const oneHourLater = new Date(now.getTime() + 60 * 60 * 1000);
+  document.getElementById('taskEndTime').value = oneHourLater.toISOString().slice(0, 16);
 }
 
 function closeTaskModal() {
-  const modal = document.getElementById('taskModal');
-  if (modal) {
-    modal.classList.add('hidden');
-    const form = document.getElementById('taskForm');
-    if (form) form.reset();
-  }
+  document.getElementById('taskModal').classList.add('hidden');
+  document.getElementById('taskForm').reset();
 }
-
-// Close modal when clicking outside
-window.onclick = function(event) {
-  const modal = document.getElementById('taskModal');
-  if (event.target === modal) {
-    closeTaskModal();
-  }
-}
-
-// Close modal on ESC key
-document.addEventListener('keydown', function(event) {
-  if (event.key === 'Escape') {
-    closeTaskModal();
-  }
-});
 
 // Add Task
-const taskForm = document.getElementById('taskForm');
-if (taskForm) {
-  taskForm.addEventListener('submit', async (e) => {
-    e.preventDefault();
+document.getElementById('taskForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  
+  const subject = document.getElementById('taskSubject').value;
+  const startTime = document.getElementById('taskStartTime').value;
+  const endTime = document.getElementById('taskEndTime').value;
+  const notes = document.getElementById('taskNotes').value;
+  
+  try {
+    const response = await fetch(`${API_URL}/tasks`, {
+      method: 'POST',
+      headers: getHeaders(),
+      body: JSON.stringify({
+        subject,
+        startTime,
+        endTime,
+        notes
+      })
+    });
     
-    const subject = document.getElementById('taskSubject').value;
-    const startTime = document.getElementById('taskStartTime').value;
-    const endTime = document.getElementById('taskEndTime').value;
-    const notes = document.getElementById('taskNotes').value;
+    const data = await response.json();
     
-    // Validate times
-    const start = new Date(startTime);
-    const end = new Date(endTime);
-    
-    if (end <= start) {
-      alert('End time must be after start time!');
-      return;
+    if (data.success) {
+      closeTaskModal();
+      loadTasks();
+      loadDashboardData(); // Refresh dashboard stats
+      alert('Task added successfully!');
+    } else {
+      alert(data.message || 'Failed to add task');
     }
-    
-    const submitBtn = e.target.querySelector('button[type="submit"]');
-    const originalText = submitBtn.innerHTML;
-    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Adding...';
-    submitBtn.disabled = true;
-    
-    try {
-      const response = await fetch(`${API_URL}/tasks`, {
-        method: 'POST',
-        headers: getHeaders(),
-        body: JSON.stringify({
-          subject,
-          startTime,
-          endTime,
-          notes
-        })
-      });
-      
-      const data = await response.json();
-      
-      if (data.success) {
-        closeTaskModal();
-        if (typeof loadTasks === 'function') loadTasks();
-        if (typeof loadDashboardData === 'function') loadDashboardData();
-        
-        // Show success message
-        const alertDiv = document.createElement('div');
-        alertDiv.className = 'alert alert-success';
-        alertDiv.style.position = 'fixed';
-        alertDiv.style.top = '20px';
-        alertDiv.style.right = '20px';
-        alertDiv.style.zIndex = '9999';
-        alertDiv.innerHTML = '<i class="fas fa-check-circle"></i> Task added successfully!';
-        document.body.appendChild(alertDiv);
-        setTimeout(() => alertDiv.remove(), 3000);
-      } else {
-        alert(data.message || 'Failed to add task. Please try again.');
-      }
-    } catch (error) {
-      console.error('Add task error:', error);
-      alert('Failed to add task. Please check your connection and try again.');
-    } finally {
-      submitBtn.innerHTML = originalText;
-      submitBtn.disabled = false;
-    }
-  });
-}
+  } catch (error) {
+    console.error('Add task error:', error);
+    alert('Failed to add task. Please try again.');
+  }
+});
 
 // Load all tasks
 async function loadTasks() {
@@ -141,7 +88,6 @@ async function loadTasks() {
 // Display all tasks
 function displayAllTasks(tasks) {
   const taskList = document.getElementById('allTaskList');
-  if (!taskList) return;
   
   if (!tasks || tasks.length === 0) {
     taskList.innerHTML = `
@@ -158,8 +104,6 @@ function displayAllTasks(tasks) {
 // Display today's tasks
 function displayTodayTasks(tasks) {
   const taskList = document.getElementById('todayTaskList');
-  if (!taskList) return;
-  
   const today = new Date().toISOString().split('T')[0];
   
   const todayTasks = tasks.filter(task => {
@@ -211,7 +155,7 @@ function createTaskHTML(task) {
 
 // Toggle task completion
 async function toggleTaskComplete(taskId, currentStatus) {
-  if (currentStatus === 'completed') return;
+  if (currentStatus === 'completed') return; // Don't allow un-completing
   
   try {
     const response = await fetch(`${API_URL}/tasks/${taskId}/complete`, {
@@ -223,7 +167,7 @@ async function toggleTaskComplete(taskId, currentStatus) {
     
     if (data.success) {
       loadTasks();
-      if (typeof loadDashboardData === 'function') loadDashboardData();
+      loadDashboardData();
     }
   } catch (error) {
     console.error('Toggle complete error:', error);
@@ -246,18 +190,7 @@ async function deleteTask(taskId) {
     
     if (data.success) {
       loadTasks();
-      if (typeof loadDashboardData === 'function') loadDashboardData();
-      
-      // Show success message
-      const alertDiv = document.createElement('div');
-      alertDiv.className = 'alert alert-success';
-      alertDiv.style.position = 'fixed';
-      alertDiv.style.top = '20px';
-      alertDiv.style.right = '20px';
-      alertDiv.style.zIndex = '9999';
-      alertDiv.innerHTML = '<i class="fas fa-check-circle"></i> Task deleted successfully!';
-      document.body.appendChild(alertDiv);
-      setTimeout(() => alertDiv.remove(), 3000);
+      loadDashboardData();
     }
   } catch (error) {
     console.error('Delete task error:', error);
@@ -267,13 +200,8 @@ async function deleteTask(taskId) {
 
 // Filter tasks
 async function filterTasks() {
-  const statusSelect = document.getElementById('filterStatus');
-  const dateInput = document.getElementById('filterDate');
-  
-  if (!statusSelect || !dateInput) return;
-  
-  const status = statusSelect.value;
-  const date = dateInput.value;
+  const status = document.getElementById('filterStatus').value;
+  const date = document.getElementById('filterDate').value;
   
   let url = `${API_URL}/tasks?limit=100`;
   
