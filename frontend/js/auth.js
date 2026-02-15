@@ -1,6 +1,5 @@
 // API Configuration
-const API_URL = 'https://study-tracker-it26.onrender.com/api';
-
+const API_URL = window.API_CONFIG?.BACKEND_URL || 'http://localhost:5000/api';
 // Show/Hide Forms
 function showLogin() {
   document.getElementById('loginCard').classList.remove('hidden');
